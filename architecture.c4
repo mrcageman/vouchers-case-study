@@ -259,4 +259,92 @@ views {
         include loyaltyApi, vms 
         include reminderService, backfill
     }
+
+    dynamic view syncState {
+        title "04 - Keeping local state in sync"
+        autoLayout TopBottom
+
+        apps -> loyaltyApi "Customer redeems voucher"
+        pos -> loyaltyApi "POS activates voucher"
+
+        loyaltyApi -> intersolve "Redeem voucher"
+
+        loyaltyApi -> kafka "Publish VoucherRedeemed event" {
+            notes "Published after redemption succeeds and off the response path to prevent blocking customer."
+        }
+
+        kafka -> sync "Consume lifecycle event"
+
+        sync -> reminderDb "Apply update, guarded by event version" {
+            notes "Status precedence / version guard: a late VoucherUpdated must not revive a redeemed voucher."
+        }
+    }
+
+    dynamic view dailyReminder {
+        title "05 - Daily reminder run"
+        autoLayout TopBottom
+
+        worker -> rules "Load reminder timing for voucher type"
+
+        worker -> reminderDb "Query vouchers due for reminding" {
+            notes "Indexed on reminder date. No external calls to Intersolve or LoyaltyAPI"
+        }
+
+        worker -> kafka "Publish reminder event"{
+            notes "Idempotency key = voucher id + due date, so a retry can never send a second email."
+        }
+
+        kafka -> ces "Deliver reminder event"
+
+        ces -> selligent "Send reminder email"
+
+        worker -> reminderDb "Mark reminder sent" {
+            notes "Tracked in local state to avoid duplicates. Failed sends stay retryable and land in DLQ instead of being lost."
+        }
+    }
+
+    dynamic view backfillRun {
+        title "06 - Backfill & reconcilliation"
+        autoLayout TopBottom
+
+        backfill -> intersolve "Page through existing vouchers (rate-limited)" {
+            notes "One-time seed of 3.2m existing vouchers. With no bulk API this is SLOW. Run in background and make resumable. Prefer export if Intersolve offers one."
+        }
+
+        intersolve -> backfill "Voucher data"
+
+        backfill -> reminderDb "Insert or repair local state" {
+            notes "Can also run periodically to reconcile drift between local state and Intersolve."
+        }
+    }
+
+    dynamic view emailFailure {
+        title "07 - Reminder email failure"
+        autoLayout TopBottom
+
+        ces -> selligent "Send reminder email" {
+            notes "Retried with backoff on timeout. Idempotency key travels with send, so a retry after Selligent timeout can never send the same email twice."
+        }
+
+        selligent -> ces "Timeout / failure"
+
+        ces -> dlq "Park after N retries" {
+            notes "Nothing is silently dropped. Parked items are replayable once cause is fixed. Alert if DLQ grows or reminders sit overdue."
+        }
+    }
+
+    dynamic view eventFailure {
+        title "08 - Lifecycle event failure"
+        autoLayout TopBottom
+
+        kafka -> sync "Consume lifecycle event"
+
+        sync -> dlq "Park unprocessable event after N tries" {
+            notes "Events that can't be applied land here instead of blocking the stream."
+        }
+
+        backfill -> reminderDb "Nightly reconciliation repairs state" {
+            notes "Safety net: because local state is rebuilt fro, Intersolve, a lost or parked event can never permanently lose a reminder. It simply fires on the next daily run."
+        }
+    }
 }
