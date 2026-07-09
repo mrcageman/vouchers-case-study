@@ -115,7 +115,9 @@ model {
     }
 
     externalSystems = boundary "External systems" {
+        style {
         color amber
+        }
         intersolve = softwareSystem "Intersolve" {
             technology "HTTPS"
             summary "External voucher processing partner APIs (slow, no bulk queries)"
