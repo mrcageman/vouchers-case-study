@@ -249,4 +249,14 @@ views {
         include hema, hema.*
         include externalSystems, externalSystems.*
     }
+
+    view intersolveBoundary {
+        title "03 - Intersolve boundary"
+        description "Every path that touches the Intersolve API"
+        autoLayout TopBottom
+
+        include intersolve
+        include loyaltyApi, vms 
+        include reminderService, backfill
+    }
 }
