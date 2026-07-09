@@ -37,7 +37,7 @@ model {
         }
 
         vms = container "Voucher Management System" {
-
+            description "Creates and updates vouchers in Intersolve. Provides voucher information for e.g. email templates."
         }
 
         loyaltyApi = container "Loyalty API" {
@@ -46,7 +46,7 @@ model {
 
         kafka = container "Kafka" {
             technology "Event Streaming"
-            
+            icon tech:kafka
             style {
                 shape queue
             }
@@ -56,15 +56,44 @@ model {
             
         }
 
+        dlq = container "Dead-Letter Queue" {
+            technology "Kafka topic"
+            style {
+                color red
+                shape queue
+            }
+        }
+
+        reminderService = container "Voucher Reminder Service" {
+            style {
+                color green
+            }
+
+            backfill = component "Backfill worker" {
+                description "One-time, rate-limited seed for 3.2m existing vouchers in Intersolve."
+                style {
+                    color green
+                }
+            }
+        }
     }
 
     externalSystems = boundary "External systems" {
+        color amber
         intersolve = softwareSystem "Intersolve" {
+            technology "HTTPS"
             summary "External voucher processing partner APIs (slow, no bulk queries)"
+            style {
+                color amber
+            }
         }
 
         selligent = softwareSystem "Selligent" {
+            technology "HTTPS"
             summary "Email marketing platform"
+            style {
+                color amber
+            }
         }
     }
 
