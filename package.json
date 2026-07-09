@@ -7,7 +7,8 @@
   "scripts": {
     "start": "likec4 start",
     "dev": "likec4 start",
-    "build": "likec4 build"
+    "build": "likec4 build",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",
