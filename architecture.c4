@@ -48,4 +48,13 @@ views {
         include hema
         include externalSystems, externalSystems.*
     }
+
+    view containers of hema {
+        title "02 - Containers"
+
+        include customer
+        include employee
+        include hema, hema.*
+        include externalSystems, externalSystems.*
+    }
 }
