@@ -1,0 +1,21 @@
+{
+  "name": "vouchers-case-study",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.7.1",
+  "scripts": {
+    "start": "likec4 start",
+    "dev": "likec4 start",
+    "build": "likec4 build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "likec4": "latest",
+    "vitest": "latest",
+    "typescript": "^5.9.3"
+  },
+  "stackblitz": {
+    "installDependencies": true
+  }
+}
