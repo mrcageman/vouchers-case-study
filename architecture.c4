@@ -24,6 +24,38 @@ model {
 
     hema = softwareSystem "Hema Voucher Platform" {
 
+        apps = component "Website / mobile app" {
+            style {
+                shape browser
+            }
+        }
+
+        pos = component "Store POS" {
+            style {
+                shape mobile
+            }
+        }
+
+        vms = container "Voucher Management System" {
+
+        }
+
+        loyaltyApi = container "Loyalty API" {
+            technology "HTTPS"
+        }
+
+        kafka = container "Kafka" {
+            technology "Event Streaming"
+            
+            style {
+                shape queue
+            }
+        }
+
+        ces = container "Customer Engagement Service" {
+            
+        }
+
     }
 
     externalSystems = boundary "External systems" {
