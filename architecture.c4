@@ -37,15 +37,17 @@ model {
         }
 
         vms = container "Voucher Management System" {
-            description "Creates and updates vouchers in Intersolve. Provides voucher information for e.g. email templates."
+            description "Creates and updates vouchers in Intersolve. Provides voucher information for e.g. email templates. Also dispatches lifecycle events."
         }
 
         loyaltyApi = container "Loyalty API" {
             technology "HTTPS"
+            description "Handles voucher activation / redemption from apps and pos. After succesful activation publishes voucher event (non-blocking)."
         }
 
         kafka = container "Kafka" {
             technology "Event Streaming"
+            description "Existing event backbone. Now also handles voucher lifecycle events and reminder email events."
             icon tech:kafka
             style {
                 shape queue
@@ -53,11 +55,12 @@ model {
         }
 
         ces = container "Customer Engagement Service" {
-            
+            description "Consumes events and dispatches customer emails via Selligent."
         }
 
         dlq = container "Dead-Letter Queue" {
             technology "Kafka topic"
+            description "Lifecycle events and reminder emails that keep failing end up here after retries. Nothing is dropped. Parked messages can be inspected and replayed."
             style {
                 color red
                 shape queue
@@ -65,13 +68,46 @@ model {
         }
 
         reminderService = container "Voucher Reminder Service" {
+           description "NEW! Keeps a local view of voucher expiry so daily reminders never have to touch Intersolve or Loyalty API."
             style {
                 color green
+            }
+
+            sync = component "Event consumer" {
+                description "Keeps the local DB in sync from voucher lifecycle events. Event version / status precedence stops late update from reviving redeemed voucher. Recomputes reminder date when voucher's expiry or type changes."
+                style {
+                    color green
+                }
+            }
+
+            worker = component "Daily worker" {
+                description "Scheduled worker. Finds vouchers due for reminding and publishes reminder events. No external dependency on Intersolve APIs."
+                style {
+                    color green
+                }
             }
 
             backfill = component "Backfill worker" {
                 description "One-time, rate-limited seed for 3.2m existing vouchers in Intersolve."
                 style {
+                    color green
+                }
+            }
+
+            reminderDb = component "Reminder database" {
+                technology "Database"
+                description "Local read model: voucher id, customer id, type, status, expiry, reminder due date, reminder sent, attempts, idempotency key"
+                style {
+                    shape storage
+                    color green
+                }
+            }
+
+            rules = component "Reminder rules" {
+                technology "Configuration"
+                description "Reminder timing per voucher type etc. Config, no code changes, so no redeploy required for changes to apply."
+                style {
+                    shape storage
                     color green
                 }
             }
