@@ -1,4 +1,51 @@
 specification {
+    element actor {
+        style {
+            shape person
+        }
+    }
+
+    element softwareSystem
+    element container
+    element component
+
+    element boundary
 }
 
-views {}
+model {
+
+    customer = actor "Customer" {
+        summary "A customer interacting with our website/apps"
+    }
+
+    employee = actor "Employee" {
+        summary "e.g. Store clerk"
+    }
+
+    hema = softwareSystem "Hema Voucher Platform" {
+
+    }
+
+    externalSystems = boundary "External systems" {
+        intersolve = softwareSystem "Intersolve" {
+            summary "External voucher processing partner APIs (slow, no bulk queries)"
+        }
+
+        selligent = softwareSystem "Selligent" {
+            summary "Email marketing platform"
+        }
+    }
+
+}
+
+views {
+    view index {
+        title "01 - System Context"
+        autoLayout TopBottom
+
+        include customer
+        include employee
+        include hema
+        include externalSystems, externalSystems.*
+    }
+}
