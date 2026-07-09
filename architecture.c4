@@ -133,6 +133,101 @@ model {
         }
     }
 
+    customer -> apps "uses"
+    employee -> pos "operates"
+
+    apps -> loyaltyApi "Activate / Redeem" {
+        technology "HTTPS"
+    }
+    pos -> loyaltyApi "Activate / Redeem" {
+        technology "HTTPS"
+    }
+
+    loyaltyApi -> intersolve "Activates / Redeems vouchers" {
+        technology "HTTPS"
+    }
+
+    vms -> intersolve "Creates / Updates vouchers" {
+        technology "HTTPS"
+    }
+
+    vms -> selligent "Voucher data for email templates" 
+
+    vms -> kafka "Publish voucher lifecycle events"{
+        style {
+            color green
+        }
+    }
+
+    loyaltyApi -> kafka "Publish voucher lifecycle events" {
+        style {
+            color green
+        }
+    }
+
+    kafka -> ces "Event consumption" {
+        style {
+            color green
+        }
+    }
+
+    kafka -> sync "Voucher lifecycle events" {
+        style {
+            color green
+        }
+    }
+
+    sync -> reminderDb "Upsert voucher state" {
+        style {
+            color green
+        }
+    }
+
+    backfill -> intersolve "One-time, rate-limited read" {
+        style {
+            color green
+        }
+    }
+
+    backfill -> reminderDb "seed / reconcile local state" {
+        style {
+            color green
+        }
+    }
+
+    worker -> rules "read config / reminder timings" {
+        style {
+            color green
+        }
+    }
+
+    worker -> reminderDb "find due reminders, mark sent" {
+        style {
+            color green
+        }
+    }
+
+    worker -> kafka "Publish reminder events" {
+        style {
+            color green
+        }
+    }
+
+    ces -> selligent "Dispatch emails"
+
+    sync -> dlq "unprocessable event, after retries" {
+        style {
+            color red
+        }
+    }
+
+    ces -> dlq "undeliverable/failed emails, after retries" {
+        style {
+            color red
+        }
+    }
+
+
 }
 
 views {
